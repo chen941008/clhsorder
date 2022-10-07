@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="author" content="oxxo.studio">
+    <meta name="copyright" content="oxxo.studio">
+    <title>線上訂餐(管理員)</title>
+    <script src="https://code.jquery.com/jquery-1.9.1.js"></script>
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Noto+Sans+TC&display=swap");
+        html,
+        body {
+            background-color: #2C5D63;
+            font-family: "Noto Sans TC", sans-serif !important;
+            color: #DFEBED;
+            font-weight: bold;
+        }
+        
+        div {
+            margin-top: 3vh;
+            margin-left: 2vh;
+            font-size: 6vw;
+            font-family: "Noto Sans TC", sans-serif !important;
+            font-weight: 1000;
+        }
+        
+        button {
+            width: 18vw;
+            height: 5vw;
+            font-size: 3vw;
+            background: #ccc;
+            font-family: "Noto Sans TC", sans-serif !important;
+            font-weight: 1000;
+            border: 0 none;
+            cursor: pointer;
+            -webkit-border-radius: 5vw;
+            border-radius: 5vw;
+        }
+        
+        input {
+            margin-top: 1vh;
+            margin-left: 1vh;
+            width: 20vw;
+            height: 4vw;
+            font-size: 3vw;
+            border: 2px black solid;
+            font-family: "Noto Sans TC", sans-serif !important;
+            font-weight: 1000;
+        }
+        
+        label {
+            font-size: 8vw;
+            font-family: "Noto Sans TC", sans-serif !important;
+            font-weight: 1000;
+        }
+        
+        h1 {
+            margin-top: 3vh;
+            margin-left: 3vh;
+            font-size: 10vw;
+            font-family: "Noto Sans TC", sans-serif !important;
+            font-weight: 1000;
+        }
+        
+        h3 {
+            margin-top: 3vh;
+            margin-left: 3vh;
+            font-size: 4vw;
+            font-family: "Noto Sans TC", sans-serif !important;
+            font-weight: 1000;
+        }
+        
+        input[type="radio"] {
+            margin-top: 1vh;
+            margin-left: 3vh;
+            width: 7vw;
+            height: 7vw;
+            padding: 5px 15px;
+            font-weight: 1000;
+        }
+        
+        .c1 {
+            display: inline;
+        }
+        
+        .cancelfood {
+            width: 5vw;
+        }
+        
+        .foodInput {
+            width: 40vw;
+        }
+    </style>
+    <script>
+        var appUrl = 'https://script.google.com/macros/s/AKfycby6cFlX8aqloRa1Juhb1TAAzzHjrTqpV5CuWp_btxLxG1zrn88zZGApBcDME57mbQ8T9A/exec';
+        var appUrl2 = 'https://script.google.com/macros/s/AKfycbydQgHE4pPYb_JMUTzJW4cyS-t3PBhlGTB0pyNjxyW2_jyp8KCjS6lrrOuOAWTHatiB/exec';
+        var state = 1;
+        var total = 0;
+
+        function Onkeydown() {
+            if (event.keyCode === 13 && state == 3) {
+                CreateFoodlist();
+            } else if (event.keyCode === 13 && state == 2) {
+                BtnStored();
+            }
+        }
+        document.onkeydown = Onkeydown;
+
+        function Clear(div) {
+            $(div).empty();
+        }
+
+        function StartS() {
+            Get("orders", ForOrders);
+            Get("openCheck", StartBtn);
+        }
+
+        function BtnControl() {
+            Clear("#dd2")
+            let le = document.getElementById("dd2");
+            if (state != 1) { //ToCheck
+                le.innerHTML += "<button class='c1' id='btn2' onclick='ToFirst()'>確認訂單</button>";
+            }
+            if (state != 2) { //ToStored
+                le.innerHTML += "<button class='c1' id='btn3' onclick='ToSecond()'>更改餘額</button>";
+            }
+            if (state != 3) { //ToCreate
+                le.innerHTML += "<button class='c1' id='btn4' onclick='ToThird()'>今日菜單</button>";
+            }
+        }
+
+        function ToFirst() {
+            Clear("#d2")
+            Clear("#d3")
+            state = 1;
+            BtnControl();
+            Get("orders", ForOrders);
+        }
+
+        function ToSecond() {
+            Clear("#d2")
+            Clear("#d3")
+            state = 2;
+            BtnControl();
+            Get("orders", ToStored);
+        }
+
+        function ToThird() {
+            Clear("#d2")
+            Clear("#d3")
+            state = 3;
+            BtnControl();
+            Get("openCheck", Determine);
+        }
+
+        function Get(text, foo = StartS, number = 25) {
+            parameter = {
+                url: "https://docs.google.com/spreadsheets/u/1/d/12SWuj4vPfMct7RIkur_Ch-hv9TQwl5SDJ8Jl8i4r1Sk/edit#gid=0",
+                name: '工作表1',
+                startRow: number,
+                startColumn: 2,
+                thing: text
+            };
+            $.get(appUrl, parameter, function(data) {
+                foo(data);
+            });
+        }
+
+        function Post(text, number = 25) {
+            parameter = {
+                url: "https://docs.google.com/spreadsheets/u/1/d/12SWuj4vPfMct7RIkur_Ch-hv9TQwl5SDJ8Jl8i4r1Sk/edit#gid=0",
+                name: '工作表1',
+                startRow: number + 1,
+                thing: text
+            };
+            $.get(appUrl2, parameter);
+        }
+
+        function StartBtn(data) {
+            let le = document.getElementById("dd1");
+            if (data == "close") {
+                le.innerHTML = data + "<button class='c1' id='btn1' value=" + data + " onclick='Alternative1()'>open</button>"
+            } else if (data == "open") {
+                le.innerHTML = data + "<button class='c1' id='btn1' value=" + data + " onclick='Alternative1()'>close</button>"
+            }
+            BtnControl();
+        }
+
+        function ChangeBtn(data) {
+            let le = document.getElementById("dd1");
+            if (data == "close") {
+                Post('clear');
+                alert("已開啟");
+                total = 0;
+                le.innerHTML = "open<button class='c1' id='btn1' value='open' onclick='Alternative1()'>close</button>"
+            } else if (data == "open") {
+                alert("已關閉");
+                le.innerHTML = "close<button class='c1' id='btn1' value='close' onclick='Alternative1()'>open</button>"
+            }
+            if (state == 3) {
+                Clear('#d2');
+                Clear('#d3')
+                Get("openCheck", Determine);
+            }
+        }
+
+        function Alternative1() {
+            Get('openCheck', ChangeBtn);
+            Post('state');
+        }
+
+        function ForOrders(data) {
+            Clear("#d2")
+            Clear("#d3")
+            index = 0;
+            let le2 = document.getElementById("d2");
+            let le3 = document.getElementById("d3");
+            le3.innerHTML = "<br>";
+            [a, b, c, d, e, f] = data.split("/,");
+            a = a.split(",");
+            a.pop();
+            b = b.split(",");
+            b.pop();
+            c = c.split(",");
+            c.pop();
+            d = d.split(",");
+            d.pop();
+            e = e.split(",");
+            e.pop();
+            f = f.split(",");
+            for (var i = 0; i < 37; i++) {
+                if (d[i] == "Waiting") {
+                    index += 1;
+                    le2.innerHTML += "<h3 class='c1'>" + a[i] + "號 " + e[i] + " " + b[i] + " " + c[i] + "塊" + "</h3><button class='c1' id='" + index + "' data-balance='" + (parseInt(f[i]) - parseInt(c[i])) + "' data-cost='" + parseInt(c[i]) + "' data-food='" + b[i] + "' data-name='" + e[i] + "' data-number='" + parseInt(a[i]) + "' value='checked' onclick='OnClickChecked();'>確認</button><br>"
+                }
+            }
+            for (var i = 0; i < 37; i++) {
+                if (d[i] == "Checked") {
+                    index += 1;
+                    le3.innerHTML += "<h3 class='c1'>" + a[i] + "號 " + e[i] + " " + b[i] + " " + c[i] + "塊 Checked" + "</h3><br>"
+                    total += parseInt(c[i]);
+                }
+            }
+            le3.innerHTML += `<h3 class='c1'>結算：${total}元</h3><br>`
+        }
+
+        function OnClickChecked() {
+            total = 0;
+            let that = event.target;
+            var thing = `${that.dataset.number}號 ${that.dataset.name} ${that.dataset.food} ${that.dataset.cost}塊`;
+            parameter = {
+                url: "https://docs.google.com/spreadsheets/u/1/d/12SWuj4vPfMct7RIkur_Ch-hv9TQwl5SDJ8Jl8i4r1Sk/edit#gid=0",
+                name: '工作表1',
+                startRow: parseInt(that.dataset.number) + 1,
+                thing: 'tride',
+                balance: that.dataset.balance
+            };
+            $.get(appUrl2, parameter);
+            Get("orders", ForOrders);
+        }
+
+        function ToStored(data) {
+            Clear("#d2")
+            index = 0;
+            let le = document.getElementById("d2");
+            [a, b, c, d, e, f] = data.split("/,");
+            a = a.split(",");
+            a.pop();
+            b = b.split(",");
+            b.pop();
+            c = c.split(",");
+            c.pop();
+            d = d.split(",");
+            d.pop();
+            e = e.split(",");
+            e.pop();
+            f = f.split(",");
+            for (let i = 0; i < 37; i++) {
+                le.innerHTML += `<input id='t${i}' data-balance='${f[i]}' data-number='${a[i]}' type='text' placeholder='儲值金額'><h3 class='c1'>${a[i]}號 ${e[i]} 餘額:${f[i]}</h3><br>`;
+            }
+            le.innerHTML += `<button onclick='BtnStored()'>充值</button>`
+        }
+
+        function BtnStored() {
+            for (let i = 0; i < 37; i++) {
+                let that = document.getElementById(`t${i}`);
+                if ((that.value === "") == false) {
+                    parameter = {
+                        url: "https://docs.google.com/spreadsheets/u/1/d/12SWuj4vPfMct7RIkur_Ch-hv9TQwl5SDJ8Jl8i4r1Sk/edit#gid=0",
+                        name: '工作表1',
+                        startRow: parseInt(that.dataset.number) + 1,
+                        thing: 'stored',
+                        balance: parseInt(that.dataset.balance) + parseInt(that.value)
+                    };
+                    $.get(appUrl2, parameter);
+                }
+            }
+            ToSecond();
+        }
+
+        function Determine(data) {
+            if (data == "close") {
+                Get("food", ToCreate);
+                CopyBoard();
+            } else {
+                document.getElementById('d2').innerHTML = "<h2>請關閉表單</h2>"
+            }
+        }
+
+        function ToCreate(data) {
+            let le = document.getElementById('d2');
+            [a, b] = data.split("/,");
+            a = a.split(",");
+            a.pop();
+            b = b.split(",");
+            for (let i = 0; i < 14; i++) {
+                if (b[i] > 0) {
+                    in1 = `${a[i]}_${b[i]}`;
+                } else {
+                    in1 = ``
+                }
+                le.innerHTML += `<input class='foodInput' id='tt${i}' tpye='text' placeholder='請輸入: 食物_價格' value='${in1}'><button class="cancelfood" data-index='tt${i}' onclick='document.getElementById(event.target.dataset.index).value = "";'>-</button><br>`
+            }
+            le.innerHTML += "<button onclick='CreateFoodlist()'>送出</button>"
+        }
+
+        function CreateFoodlist() {
+            let foodList = [];
+            for (let i = 0; i < 14; i++) {
+                aln = $(`#tt${i}`).val();
+                if (aln === "") {
+                    foodList.push([`None${i+1}`, "0"]);
+                } else {
+                    foodList.push(aln.split("_"));
+                }
+            }
+            for (let i = 0; i < 14; i++) {
+                parameter = {
+                    url: "https://docs.google.com/spreadsheets/u/1/d/12SWuj4vPfMct7RIkur_Ch-hv9TQwl5SDJ8Jl8i4r1Sk/edit#gid=0",
+                    name: '工作表1',
+                    startRow: i + 2,
+                    thing: 'list',
+                    a: foodList[i][0],
+                    b: foodList[i][1]
+                };
+                $.get(appUrl2, parameter);
+            }
+            ToThird();
+        }
+
+        function CopyBoard() {
+            let le = document.getElementById('d3');
+            const copyList = [] //foodlisthere
+            for (let i = 0; i < copyList.length; i++) {
+                le.innerHTML += `<h3 class='c1''>${copyList[i]}</h3><button class='c1 cancelfood' data-save='${copyList[i]}' onclick='Copyset()'>+</button><br>`;
+            }
+        }
+
+        function Copyset() {
+            let fi = document.getElementsByClassName('foodInput');
+            for (let i = 0; i < fi.length; i++) {
+                if (fi[i].value === ``) {
+                    fi[i].value = event.target.dataset.save;
+                    break;
+                }
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="d1">
+        <div class="c1" id="dd1"></div>
+        <div class="c1" id="dd2"></div>
+    </div>
+    <div id="d2">
+    </div>
+    <div id="d3">
+    </div>
+    <script>
+        StartS();
+    </script>
+
+</body>
+
+</html>
